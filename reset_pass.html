@@ -1,53 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reset Password</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <title>Reset Password</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-    <h2>Reset Password</h2>
-    <div id="resetForm" style="display: none;">
-        <input type="password" id="newPassword" placeholder="Enter your new password" required>
-        <button onclick="updatePassword()">Update Password</button>
-    </div>
-    <div id="errorMessage" style="color: red;"></div>
+  <h2>Reset Password</h2>
+  <form id="reset-form">
+    <input type="password" id="new-password" placeholder="New Password" required />
+    <button type="submit">Reset Password</button>
+  </form>
+  <div id="error-message"></div>
 
-    <script>
-         const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
-         const dbInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  <script>
+    // Initialize Supabase
+    const supabase = supabase.createClient(
+      'https://vwhxnfnvtsvycwgmcmwh.supabase.co',
+     'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'
+         
+   
+    );
 
-        // Parse token from the URL
-        const params = new URLSearchParams(window.location.search);
-        const accessToken = params.get('token');
+    const urlParams = new URLSearchParams(window.location.hash.substring(1));
+    const accessToken = urlParams.get('access_token');
 
-        if (accessToken) {
-            document.getElementById('resetForm').style.display = 'block';
-        } else {
-            document.getElementById('errorMessage').innerText = 'Invalid or expired link.';
-        }
+    document.getElementById('reset-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
 
-        async function updatePassword() {
-            const newPassword = document.getElementById('newPassword').value;
+      const newPassword = document.getElementById('new-password').value;
 
-            if (!newPassword) {
-                alert('Please enter a new password.');
-                return;
-            }
+      if (!accessToken) {
+        document.getElementById('error-message').innerText = "Invalid or expired token.";
+        return;
+      }
 
-            const { error } = await dbInstance.auth.updateUser({
-                password: newPassword,
-            });
+      // Update the password
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+        access_token: accessToken,
+      });
 
-            if (error) {
-                alert('Error updating password: ' + error.message);
-            } else {
-                alert('Password successfully updated!');
-                window.location.href = 'login.html'; // Redirect to login page
-            }
-        }
-    </script>
+      if (error) {
+        document.getElementById('error-message').innerText = error.message;
+      } else {
+        alert('Password updated successfully!');
+        window.location.href = 'https://rifaaateee.github.io/Attendance-System/'; // Redirect after successful reset
+      }
+    });
+  </script>
 </body>
 </html>
