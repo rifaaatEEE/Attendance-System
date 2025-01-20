@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fetch Latest IP</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #e3f2fd, #bbdefb);
+            color: #333;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .container {
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            color: #1565c0;
+        }
+        .instruction {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        button {
+            background: #1565c0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #003c8f;
+        }
+        .loading {
+            font-size: 16px;
+            color: #1565c0;
+        }
+        .error {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Fetch Latest IP</h1>
+        <p class="instruction">
+            This page will fetch the most recent IP from the Supabase table "IPs" and allow you to browse to it.
+        </p>
+        
+        <p id="loading" class="loading">Loading latest IP...</p>
+        <p id="errorMessage" class="error" style="display: none;"></p>
+
+        <button id="browseBtn" style="display: none;">Browse to Latest IP</button>
+    </div>
+
+    <!-- Include the Supabase client library -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.0.0/dist/umd/supabase.min.js"></script>
+    <script>
+        // Initialize Supabase client
+        const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; // Replace with your Supabase public API key
+        const dbInstance = supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Function to fetch IP with serial = 1
+        async function fetchIPWithSerialOne() {
+            try {
+                const { data, error } = await dbInstance
+                    .from('ips')
+                    .select('ip')
+                    .eq('serial', 1) // Filter to get rows with serial = 1
+                    .limit(1); // Ensure only one result is fetched
+
+                if (error) {
+                    console.error("Query Error:", error);
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('errorMessage').textContent = `Error fetching IP: ${error.message}`;
+                    document.getElementById('errorMessage').style.display = 'block';
+                    return;
+                }
+
+                if (data && data.length > 0 && data[0].ip) {
+                    // Hide the loading text and show the button
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('browseBtn').style.display = 'inline-block';
+                    document.getElementById('browseBtn').onclick = function () {
+                        window.location.href = `http://${data[0].ip}`;
+                    };
+                } else {
+                    // No IP was found
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('errorMessage').textContent = 'No IP found in the database.';
+                    document.getElementById('errorMessage').style.display = 'block';
+                }
+            } catch (err) {
+                console.error('Unexpected error:', err);
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('errorMessage').textContent = 'An unexpected error occurred. Please try again later.';
+                document.getElementById('errorMessage').style.display = 'block';
+            }
+        }
+
+        // Fetch the IP when the page loads
+        fetchIPWithSerialOne();
+    </script>
+</body>
+</html>
