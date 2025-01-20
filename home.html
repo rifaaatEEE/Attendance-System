@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT-Based Internal Assessment System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #e3f2fd, #bbdefb);
+            color: #333;
+        }
+        header {
+            background: #1565c0;
+            color: white;
+            padding: 20px 10px;
+            text-align: center;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            position: relative;
+        }
+        header img {
+            width: 100px;
+            height: auto;
+        }
+        header h1 {
+            margin: 10px 0 0;
+            font-size: 24px;
+        }
+        header h2 {
+            margin: 5px 0 0;
+            font-size: 18px;
+        }
+        .scroll-text {
+            background: #003c8f;
+            color: white;
+            font-size: 16px;
+            padding: 10px 0;
+            position: absolute;
+            width: 100%;
+            bottom: -40px;
+            overflow: hidden;
+        }
+        .scroll-text marquee {
+            font-size: 18px;
+            font-weight: bold;
+        }
+        main {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 20px;
+        }
+        .login-options {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .login-card {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            text-align: center;
+            width: 250px;
+        }
+        .login-card h3 {
+            margin: 10px 0;
+        }
+        .login-card button {
+            background: #1565c0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .login-card button:hover {
+            background: #003c8f;
+        }
+        footer {
+            background: #1565c0;
+            color: white;
+            text-align: center;
+            padding: 10px 0;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <img src="C:\Users\Rifat\Desktop\1643722294796_1200.jpeg" alt="JUST Logo">
+        <h1>IoT-Based Internal Assessment System</h1>
+        <h2>Department of Electrical and Electronic Engineering (EEE)</h2>
+        <h2>Jashore University of Science & Technology (JUST)</h2>
+        <div class="scroll-text">
+            <marquee>Welcome to the IoT-Based Internal Assessment System! Empowering EEE Department, JUST.</marquee>
+        </div>
+    </header>
+    <main>
+        <div class="login-options">
+            <div class="login-card">
+                <h3>Admin Access</h3>
+                <button onclick="location.href='path1.html'">Go</button>
+            </div>
+            <div class="login-card">
+                <h3>Teacher Access</h3>
+                <button onclick="location.href='teacher_login.html'">GO</button>
+            </div>
+            <div class="login-card">
+                <h3>Student Access</h3>
+                <button onclick="location.href='student_login.html'">Go</button>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025 Department of EEE, JUST. All Rights Reserved.</p>
+    </footer>
+</body>
+</html>
