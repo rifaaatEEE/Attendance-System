@@ -1,97 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Password Reset</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            text-align: center;
-            margin: 50px;
-        }
-        form {
-            margin-top: 20px;
-        }
-        input {
-            padding: 10px;
-            margin: 10px;
-            width: 80%;
-            max-width: 300px;
-        }
-        button {
-            padding: 10px 20px;
-            margin-top: 10px;
-        }
-        .error {
-            color: red;
-            margin-top: 10px;
-        }
-        .success {
-            color: green;
-            margin-top: 10px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reset Password</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
 </head>
 <body>
-    <h1>Reset Your Password</h1>
-    <p id="message"></p>
-
-    <form id="resetForm">
-        <input type="password" id="newPassword" placeholder="Enter new password" required />
-        <button type="submit">Reset Password</button>
+  <h1>Reset Your Password</h1>
+  <div id="form-container">
+    <form id="reset-password-form">
+      <label for="new-password">New Password:</label><br>
+      <input type="password" id="new-password" placeholder="Enter new password" required><br><br>
+      <button type="submit">Reset Password</button>
     </form>
+  </div>
+  <div id="message-container" style="display: none;">
+    <p id="message"></p>
+  </div>
 
-    <p id="status" class="error"></p>
-    <p id="successMessage" class="success"></p>
+  <script>
+    // Initialize Supabase
+   const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
+  const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-    <script>
-        // Extract the token from the URL
-        const queryParams = new URLSearchParams(window.location.search);
-        const token = queryParams.get('access_token');
+    // Extract the access token from the URL fragment
+    const fragment = window.location.hash.substring(1); // Remove the "#"
+    const params = new URLSearchParams(fragment);
+    const accessToken = params.get('access_token');
 
-        if (!token) {
-            document.getElementById('message').textContent = "Invalid or missing reset token.";
-            document.getElementById('resetForm').style.display = "none";
-        } else {
-            document.getElementById('message').textContent = "Please enter your new password.";
-        }
+    // Validate the token
+    if (!accessToken) {
+      document.getElementById('form-container').style.display = 'none';
+      document.getElementById('message-container').style.display = 'block';
+      document.getElementById('message').innerText = "Invalid or missing reset token.";
+    }
 
-        // Handle the password reset form submission
-        const resetForm = document.getElementById('resetForm');
-        resetForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
+    // Handle form submission
+    document.getElementById('reset-password-form').addEventListener('submit', async (event) => {
+      event.preventDefault();
 
-            const newPassword = document.getElementById('newPassword').value;
+      const newPassword = document.getElementById('new-password').value;
 
-            if (!newPassword) {
-                document.getElementById('status').textContent = "Password cannot be empty.";
-                return;
-            }
+      if (!newPassword) {
+        alert("Please enter a new password.");
+        return;
+      }
 
-            try {
-                // Send the password reset request to Supabase
-                const response = await fetch('https://YOUR_SUPABASE_URL/auth/v1/user', {
-                    method: 'PUT',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
-                    body: JSON.stringify({ password: newPassword })
-                });
+      // Call Supabase to update the password
+      const { error } = await supabase.auth.updateUser(accessToken, {
+        password: newPassword
+      });
 
-                if (response.ok) {
-                    document.getElementById('status').textContent = "";
-                    document.getElementById('successMessage').textContent = "Password reset successfully!";
-                    resetForm.style.display = "none";
-                } else {
-                    const error = await response.json();
-                    document.getElementById('status').textContent = error.message || "Failed to reset password.";
-                }
-            } catch (err) {
-                document.getElementById('status').textContent = "An error occurred. Please try again.";
-            }
-        });
-    </script>
+      if (error) {
+        console.error("Error resetting password:", error);
+        document.getElementById('message-container').style.display = 'block';
+        document.getElementById('message').innerText = "Error resetting password. Please try again.";
+      } else {
+        document.getElementById('form-container').style.display = 'none';
+        document.getElementById('message-container').style.display = 'block';
+        document.getElementById('message').innerText = "Password reset successful! You can now log in with your new password.";
+      }
+    });
+  </script>
 </body>
 </html>
