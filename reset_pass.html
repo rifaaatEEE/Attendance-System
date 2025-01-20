@@ -17,10 +17,10 @@
     const supabase = supabase.createClient(
       'https://vwhxnfnvtsvycwgmcmwh.supabase.co',
      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'
-         
    
     );
 
+    // Extract access token from URL hash
     const urlParams = new URLSearchParams(window.location.hash.substring(1));
     const accessToken = urlParams.get('access_token');
 
@@ -34,17 +34,31 @@
         return;
       }
 
-      // Update the password
-      const { error } = await supabase.auth.updateUser({
-        password: newPassword,
-        access_token: accessToken,
-      });
+      try {
+        // Log in with the access token
+        const { user, error: loginError } = await supabase.auth.setSession({
+          access_token: accessToken,
+          refresh_token: ''
+        });
 
-      if (error) {
-        document.getElementById('error-message').innerText = error.message;
-      } else {
-        alert('Password updated successfully!');
-        window.location.href = 'https://rifaaateee.github.io/Attendance-System/'; // Redirect after successful reset
+        if (loginError) {
+          document.getElementById('error-message').innerText = "Session error: " + loginError.message;
+          return;
+        }
+
+        // Update password
+        const { error: passwordError } = await supabase.auth.updateUser({
+          password: newPassword,
+        });
+
+        if (passwordError) {
+          document.getElementById('error-message').innerText = "Password error: " + passwordError.message;
+        } else {
+          alert('Password updated successfully!');
+          window.location.href = 'https://rifaaateee.github.io/Attendance-System/'; // Redirect after success
+        }
+      } catch (err) {
+        document.getElementById('error-message').innerText = "Unexpected error: " + err.message;
       }
     });
   </script>
