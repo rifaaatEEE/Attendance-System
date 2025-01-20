@@ -10,39 +10,40 @@
     <input type="password" id="new-password" placeholder="New Password" required />
     <button type="submit">Reset Password</button>
   </form>
-  <div id="error-message"></div>
+  <div id="error-message" style="color: red;"></div>
 
   <script>
     // Initialize Supabase
     const supabase = supabase.createClient(
       'https://vwhxnfnvtsvycwgmcmwh.supabase.co',
       'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'
-    
     );
 
-    // Extract access token from URL hash
-    const urlParams = new URLSearchParams(window.location.hash.substring(1));
+    // Extract tokens from URL query parameters
+    const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('access_token');
+    const refreshToken = urlParams.get('refresh_token');
 
     document.getElementById('reset-form').addEventListener('submit', async (e) => {
       e.preventDefault();
 
       const newPassword = document.getElementById('new-password').value;
+      const errorMessageElement = document.getElementById('error-message');
 
-      if (!accessToken) {
-        document.getElementById('error-message').innerText = "Invalid or expired token.";
+      if (!accessToken || !refreshToken) {
+        errorMessageElement.innerText = "Invalid or expired token.";
         return;
       }
 
       try {
-        // Log in with the access token
-        const { user, error: loginError } = await supabase.auth.setSession({
+        // Set session with both tokens
+        const { data, error: loginError } = await supabase.auth.setSession({
           access_token: accessToken,
-          refresh_token: ''
+          refresh_token: refreshToken
         });
 
         if (loginError) {
-          document.getElementById('error-message').innerText = "Session error: " + loginError.message;
+          errorMessageElement.innerText = "Session error: " + loginError.message;
           return;
         }
 
@@ -52,13 +53,14 @@
         });
 
         if (passwordError) {
-          document.getElementById('error-message').innerText = "Password error: " + passwordError.message;
+          errorMessageElement.innerText = "Password error: " + passwordError.message;
         } else {
           alert('Password updated successfully!');
-          window.location.href = 'https://rifaaateee.github.io/Attendance-System/'; // Redirect after success
+          window.location.href = 'https://rifaaateee.github.io/Attendance-System/';
         }
       } catch (err) {
-        document.getElementById('error-message').innerText = "Unexpected error: " + err.message;
+        errorMessageElement.innerText = "Unexpected error occurred. Please try again later.";
+        console.error("Error:", err);
       }
     });
   </script>
