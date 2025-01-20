@@ -1,66 +1,76 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Reset Password</title>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+    form { max-width: 400px; margin: auto; }
+    input, button { width: 100%; padding: 10px; margin: 10px 0; }
+    .error-message { color: red; }
+  </style>
 </head>
 <body>
-  <h2>Reset Password</h2>
+  <h2>Reset Your Password</h2>
   <form id="reset-form">
-    <input type="password" id="new-password" placeholder="New Password" required />
+    <input type="password" id="new-password" placeholder="Enter new password" required />
     <button type="submit">Reset Password</button>
   </form>
-  <div id="error-message" style="color: red;"></div>
+  <div id="error-message" class="error-message"></div>
 
   <script>
-    // Initialize Supabase
-    const supabase = supabase.createClient(
-      'https://vwhxnfnvtsvycwgmcmwh.supabase.co',
-      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'
-    );
+    // Initialize Supabase client
+    const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
+    
+    const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
 
-    // Extract tokens from URL query parameters
+    // Extract tokens from URL
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('access_token');
     const refreshToken = urlParams.get('refresh_token');
 
+    // Display error if token is missing
+    if (!accessToken || !refreshToken) {
+      document.getElementById('error-message').innerText = "Invalid or expired token. Please request a new reset email.";
+      throw new Error("Missing access or refresh token in URL.");
+    }
+
     document.getElementById('reset-form').addEventListener('submit', async (e) => {
       e.preventDefault();
-
       const newPassword = document.getElementById('new-password').value;
       const errorMessageElement = document.getElementById('error-message');
 
-      if (!accessToken || !refreshToken) {
-        errorMessageElement.innerText = "Invalid or expired token.";
-        return;
-      }
-
       try {
-        // Set session with both tokens
-        const { data, error: loginError } = await supabase.auth.setSession({
+        // Set session using tokens from URL
+        const { error: sessionError } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken
         });
 
-        if (loginError) {
-          errorMessageElement.innerText = "Session error: " + loginError.message;
+        if (sessionError) {
+          errorMessageElement.innerText = "Session error: " + sessionError.message;
+          console.error("Session error:", sessionError);
           return;
         }
 
-        // Update password
+        // Update the user's password
         const { error: passwordError } = await supabase.auth.updateUser({
-          password: newPassword,
+          password: newPassword
         });
 
         if (passwordError) {
-          errorMessageElement.innerText = "Password error: " + passwordError.message;
+          errorMessageElement.innerText = "Password update failed: " + passwordError.message;
+          console.error("Password update error:", passwordError);
         } else {
-          alert('Password updated successfully!');
+          alert('Password updated successfully! You will be redirected to login.');
           window.location.href = 'https://rifaaateee.github.io/Attendance-System/';
         }
       } catch (err) {
-        errorMessageElement.innerText = "Unexpected error occurred. Please try again later.";
-        console.error("Error:", err);
+        errorMessageElement.innerText = "Unexpected error occurred. Please try again.";
+        console.error("Unexpected error:", err);
       }
     });
   </script>
