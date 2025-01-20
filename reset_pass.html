@@ -5,92 +5,47 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 20px;
-        }
-        .container {
-            max-width: 500px;
-            margin: 0 auto;
-            padding: 20px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
-        }
-        input, button {
-            display: block;
-            width: 100%;
-            margin-bottom: 15px;
-            padding: 10px;
-            font-size: 16px;
-        }
-        button {
-            background-color: #007BFF;
-            color: white;
-            border: none;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .error {
-            color: red;
-            margin-bottom: 15px;
-        }
-        .success {
-            color: green;
-            margin-bottom: 15px;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Reset Password</h2>
-        <div id="statusMessage"></div>
-        <form id="resetForm" style="display: none;">
-            <input type="password" id="newPassword" placeholder="Enter your new password" required>
-            <button type="button" onclick="updatePassword()">Update Password</button>
-        </form>
+    <h2>Reset Password</h2>
+    <div id="resetForm" style="display: none;">
+        <input type="password" id="newPassword" placeholder="Enter your new password" required>
+        <button onclick="updatePassword()">Update Password</button>
     </div>
+    <div id="errorMessage" style="color: red;"></div>
 
     <script>
-        const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+         const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+         const dbInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Get the token from the URL
-        const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('access_token'); // Supabase sends the reset token as `access_token`
-        const type = urlParams.get('type'); // The type of email (should be 'recovery')
+        // Parse token from the URL
+        const params = new URLSearchParams(window.location.search);
+        const accessToken = params.get('token');
 
-        const statusMessage = document.getElementById('statusMessage');
-        const resetForm = document.getElementById('resetForm');
-
-        // Check if the token is valid
-        if (!token || type !== 'recovery') {
-            statusMessage.innerHTML = `<p class="error">Invalid or missing reset token. Please request a new password reset.</p>`;
+        if (accessToken) {
+            document.getElementById('resetForm').style.display = 'block';
         } else {
-            statusMessage.innerHTML = `<p class="success">Token verified! Enter your new password below.</p>`;
-            resetForm.style.display = 'block';
+            document.getElementById('errorMessage').innerText = 'Invalid or expired link.';
         }
 
-        // Function to update the password
         async function updatePassword() {
             const newPassword = document.getElementById('newPassword').value;
 
-            if (!newPassword || newPassword.length < 6) {
-                statusMessage.innerHTML = `<p class="error">Password must be at least 6 characters long.</p>`;
+            if (!newPassword) {
+                alert('Please enter a new password.');
                 return;
             }
 
-            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            const { error } = await dbInstance.auth.updateUser({
+                password: newPassword,
+            });
 
             if (error) {
-                statusMessage.innerHTML = `<p class="error">Error updating password: ${error.message}</p>`;
+                alert('Error updating password: ' + error.message);
             } else {
-                statusMessage.innerHTML = `<p class="success">Password updated successfully! You can now <a href="login.html">log in</a>.</p>`;
-                resetForm.style.display = 'none';
+                alert('Password successfully updated!');
+                window.location.href = 'login.html'; // Redirect to login page
             }
         }
     </script>
