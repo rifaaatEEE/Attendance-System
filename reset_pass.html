@@ -8,71 +8,91 @@
     <style>
         body {
             font-family: Arial, sans-serif;
-            text-align: center;
+            margin: 20px;
+        }
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
             padding: 20px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
         }
         input, button {
-            margin: 10px 0;
+            display: block;
+            width: 100%;
+            margin-bottom: 15px;
             padding: 10px;
-            width: 80%;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .error {
+            color: red;
+            margin-bottom: 15px;
+        }
+        .success {
+            color: green;
+            margin-bottom: 15px;
         }
     </style>
 </head>
 <body>
-    <h1>Reset Your Password</h1>
-    <p id="error" style="color: red;"></p>
-    <p id="success" style="color: green;"></p>
-    <form id="resetForm" style="display: none;">
-        <input type="password" id="newPassword" placeholder="Enter your new password" required>
-        <input type="password" id="confirmPassword" placeholder="Confirm your new password" required>
-        <button type="submit">Reset Password</button>
-    </form>
+    <div class="container">
+        <h2>Reset Password</h2>
+        <div id="statusMessage"></div>
+        <form id="resetForm" style="display: none;">
+            <input type="password" id="newPassword" placeholder="Enter your new password" required>
+            <button type="button" onclick="updatePassword()">Update Password</button>
+        </form>
+    </div>
 
     <script>
         const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
-
         const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // Extract token from URL
+        // Get the token from the URL
         const urlParams = new URLSearchParams(window.location.search);
-        const token = urlParams.get('token');
+        const token = urlParams.get('access_token'); // Supabase sends the reset token as `access_token`
+        const type = urlParams.get('type'); // The type of email (should be 'recovery')
 
-        const errorElement = document.getElementById('error');
-        const successElement = document.getElementById('success');
+        const statusMessage = document.getElementById('statusMessage');
         const resetForm = document.getElementById('resetForm');
 
-        if (!token) {
-            errorElement.textContent = 'Invalid or missing reset token.';
+        // Check if the token is valid
+        if (!token || type !== 'recovery') {
+            statusMessage.innerHTML = `<p class="error">Invalid or missing reset token. Please request a new password reset.</p>`;
         } else {
+            statusMessage.innerHTML = `<p class="success">Token verified! Enter your new password below.</p>`;
             resetForm.style.display = 'block';
         }
 
-        resetForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-
+        // Function to update the password
+        async function updatePassword() {
             const newPassword = document.getElementById('newPassword').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
 
-            if (newPassword !== confirmPassword) {
-                errorElement.textContent = 'Passwords do not match.';
+            if (!newPassword || newPassword.length < 6) {
+                statusMessage.innerHTML = `<p class="error">Password must be at least 6 characters long.</p>`;
                 return;
             }
 
-            try {
-                const { data, error } = await supabase.auth.updateUser({
-                    password: newPassword,
-                    access_token: token,
-                });
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
 
-                if (error) throw error;
-
-                successElement.textContent = 'Password reset successfully! You can now log in.';
+            if (error) {
+                statusMessage.innerHTML = `<p class="error">Error updating password: ${error.message}</p>`;
+            } else {
+                statusMessage.innerHTML = `<p class="success">Password updated successfully! You can now <a href="login.html">log in</a>.</p>`;
                 resetForm.style.display = 'none';
-            } catch (err) {
-                errorElement.textContent = err.message || 'An error occurred during password reset.';
             }
-        });
+        }
     </script>
 </body>
 </html>
