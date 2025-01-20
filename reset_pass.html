@@ -21,20 +21,20 @@
   <div id="error-message" class="error-message"></div>
 
   <script>
-    // Initialize Supabase client after script loads
-    document.addEventListener("DOMContentLoaded", async () => {
+    // Define Supabase instance outside of event listener
+    const dbInstance = (() => {
       const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
       const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
-      
-      const supabase = supabase.createClient(supabaseUrl, supabaseAnonKey);
+      return supabase.createClient(supabaseUrl, supabaseAnonKey);
+    })();
 
-      // Extract tokens from URL
+    document.addEventListener("DOMContentLoaded", async () => {
       const urlParams = new URLSearchParams(window.location.hash.substring(1));
       const accessToken = urlParams.get('access_token');
       const refreshToken = urlParams.get('refresh_token');
 
       if (!accessToken || !refreshToken) {
-        document.getElementById('error-message').innerText = "Invalid or expired reset link. Please try again.";
+        document.getElementById('error-message').innerText = "Invalid or expired reset link. Please request a new one.";
         return;
       }
 
@@ -45,7 +45,7 @@
 
         try {
           // Set session using tokens from URL
-          const { error: sessionError } = await supabase.auth.setSession({
+          const { error: sessionError } = await dbInstance.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
@@ -57,7 +57,7 @@
           }
 
           // Update the user's password
-          const { error: passwordError } = await supabase.auth.updateUser({
+          const { error: passwordError } = await dbInstance.auth.updateUser({
             password: newPassword
           });
 
@@ -65,7 +65,7 @@
             errorMessageElement.innerText = "Password update failed: " + passwordError.message;
             console.error("Password update error:", passwordError);
           } else {
-            alert('Password updated successfully! You will be redirected to login.');
+            alert('Password updated successfully! Redirecting to login page...');
             window.location.href = 'https://rifaaateee.github.io/Attendance-System/';
           }
         } catch (err) {
