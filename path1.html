@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connect Your Device</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to bottom, #e3f2fd, #bbdefb);
+            color: #333;
+            text-align: center;
+            padding-top: 50px;
+        }
+        .container {
+            margin: 20px auto;
+            max-width: 600px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        h1 {
+            color: #1565c0;
+        }
+        .instruction {
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.6;
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background: #1565c0;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background: #003c8f;
+        }
+        .additional-button {
+            margin-top: 20px;
+            background: #4caf50;
+        }
+        .additional-button:hover {
+            background: #388e3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Connect Your Device</h1>
+        <p class="instruction">
+            Please connect your device to the following network:<br>
+            <strong>SSID: XYZ</strong><br>
+            <strong>Password: 12345678</strong><br><br>
+            After connecting to the network, browse to the provided IP address.
+        </p>
+        <form id="ipForm">
+            <input type="text" id="ipAddress" placeholder="Enter IP Address" required>
+            <button type="button" onclick="browseIPAddress()">Browse</button>
+        </form>
+
+        <button class="additional-button" onclick="window.location.href='path2.html'">If already connected, Click here</button>
+    </div>
+
+    <script>
+        function browseIPAddress() {
+            const ipAddress = document.getElementById('ipAddress').value;
+
+            if (ipAddress) {
+                // Redirect to the entered IP address
+                window.location.href = `http://${ipAddress}`;
+            } else {
+                alert('Please enter a valid IP address');
+            }
+        }
+    </script>
+</body>
+</html>
