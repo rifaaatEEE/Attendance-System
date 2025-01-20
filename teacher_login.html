@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Authentication</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h2>Register</h2>
+    <input type="email" id="email" placeholder="Enter your email" required>
+    <input type="password" id="password" placeholder="Enter your password" required>
+    <input type="text" id="courseCode" placeholder="Enter course code" required>
+    <button onclick="registerUser()">Register</button>
+    
+    <h2>Login</h2>
+    <input type="email" id="loginEmail" placeholder="Enter your email" required>
+    <input type="password" id="loginPassword" placeholder="Enter your password" required>
+    <button onclick="loginUser()">Login</button>
+    
+    <h2>Reset Password</h2>
+    <input type="email" id="resetEmail" placeholder="Enter your email" required>
+    <button onclick="resetPassword()">Reset Password</button>
+
+    <script>
+       const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
+         
+        const dbInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function registerUser() {
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const courseCode = document.getElementById('courseCode').value;
+
+            const { data, error } = await dbInstance.auth.signUp({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                alert('Error: ' + error.message);
+            } else {
+                await dbInstance.from('users').insert([{ email, course_code: courseCode }]);
+                alert('Registration successful! Check your email for confirmation.');
+            }
+        }
+
+        async function loginUser() {
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            const { data, error } = await dbInstance.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (error) {
+                alert('Error: ' + error.message);
+            } else {
+                window.location.href = 'teacher_dash.html';
+            }
+        }
+
+        async function resetPassword() {
+            const email = document.getElementById('resetEmail').value;
+            const { data, error } = await dbInstance.auth.resetPasswordForEmail(email);
+
+            if (error) {
+                alert('Error: ' + error.message);
+            } else {
+                alert('Password reset link sent! Check your email.');
+            }
+        }
+    </script>
+</body>
+</html>
