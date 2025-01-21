@@ -10,6 +10,7 @@
     form { max-width: 400px; margin: auto; }
     input, button { width: 100%; padding: 10px; margin: 10px 0; }
     .error-message { color: red; }
+    .success-message { color: green; }
   </style>
 </head>
 <body>
@@ -18,64 +19,63 @@
     <input type="password" id="new-password" placeholder="Enter new password" required />
     <button type="submit">Reset Password</button>
   </form>
-  <div id="error-message" class="error-message"></div>
+  <div id="message" class="error-message"></div>
 
   <script>
-    // Initialize Supabase client and check for errors
-    try {
-      const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
-      const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
+    // Initialize Supabase client
+    const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
 
-      const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
-      console.log('Supabase client initialized successfully:', supabase);
-    } catch (error) {
-      console.error('Error initializing Supabase:', error);
-      document.getElementById('error-message').innerText = "Failed to initialize Supabase.";
-    }
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
 
     document.addEventListener("DOMContentLoaded", async () => {
-      const urlParams = new URLSearchParams(window.location.search);
-      const accessToken = urlParams.get('access_token');
-      const refreshToken = urlParams.get('refresh_token');
-      const type = urlParams.get('type');
+      // Get tokens from hash fragment
+      const hashParams = new URLSearchParams(window.location.hash.substring(1));
+      const accessToken = hashParams.get('access_token');
+      const refreshToken = hashParams.get('refresh_token');
+      const type = hashParams.get('type');
+
+      const messageElement = document.getElementById('message');
 
       if (!accessToken || !refreshToken || type !== 'recovery') {
-        document.getElementById('error-message').innerText = "Invalid or expired reset link. Please request a new one.";
+        messageElement.innerText = "Invalid or expired reset link. Please request a new one.";
         return;
       }
 
       document.getElementById('reset-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const newPassword = document.getElementById('new-password').value;
-        const errorMessageElement = document.getElementById('error-message');
 
         try {
-          // Set session using tokens from URL
+          // Set Supabase session using the tokens from URL
           const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
 
           if (sessionError) {
-            errorMessageElement.innerText = "Session error: " + sessionError.message;
+            messageElement.innerText = "Session error: " + sessionError.message;
             console.error("Session error:", sessionError);
             return;
           }
 
-          // Update the user's password
+          // Update user's password
           const { error: passwordError } = await supabase.auth.updateUser({
             password: newPassword
           });
 
           if (passwordError) {
-            errorMessageElement.innerText = "Password update failed: " + passwordError.message;
+            messageElement.innerText = "Password update failed: " + passwordError.message;
             console.error("Password update error:", passwordError);
           } else {
-            alert('Password updated successfully! Redirecting to login page...');
-            window.location.href = 'https://rifaaateee.github.io/Attendance-System/';
+            messageElement.className = "success-message";
+            messageElement.innerText = "Password updated successfully! Redirecting...";
+            setTimeout(() => {
+              window.location.href = 'https://rifaaateee.github.io/Attendance-System/';
+            }, 2000);
           }
         } catch (err) {
-          errorMessageElement.innerText = "Unexpected error occurred. Please try again.";
+          messageElement.innerText = "Unexpected error occurred. Please try again.";
           console.error("Unexpected error:", err);
         }
       });
