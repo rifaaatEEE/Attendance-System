@@ -75,36 +75,35 @@
             messageElement.textContent = 'Invalid or missing reset link. Please request a new one.';
             messageElement.style.color = 'red';
             document.getElementById('resetForm').style.display = 'none';
-            return;
-        }
+        } else {
+            // If the token is present, proceed with setting up the form
+            document.getElementById('resetForm').addEventListener('submit', async (e) => {
+                e.preventDefault();
 
-        // Handle the password reset form submission
-        document.getElementById('resetForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
+                const newPassword = document.getElementById('newPassword').value;
 
-            const newPassword = document.getElementById('newPassword').value;
+                try {
+                    // Call Supabase to update the user's password
+                    const { error } = await supabase.auth.updateUser({
+                        access_token: resetToken,
+                        password: newPassword,
+                    });
 
-            try {
-                // Call Supabase to update the user's password
-                const { error } = await supabase.auth.updateUser({
-                    access_token: resetToken,
-                    password: newPassword,
-                });
+                    if (error) {
+                        throw error;
+                    }
 
-                if (error) {
-                    throw error;
+                    // Display success message
+                    messageElement.textContent = 'Your password has been successfully updated!';
+                    messageElement.style.color = 'green';
+                    document.getElementById('resetForm').style.display = 'none';
+                } catch (error) {
+                    // Display error message
+                    messageElement.textContent = `Error: ${error.message}`;
+                    messageElement.style.color = 'red';
                 }
-
-                // Display success message
-                messageElement.textContent = 'Your password has been successfully updated!';
-                messageElement.style.color = 'green';
-                document.getElementById('resetForm').style.display = 'none';
-            } catch (error) {
-                // Display error message
-                messageElement.textContent = `Error: ${error.message}`;
-                messageElement.style.color = 'red';
-            }
-        });
+            });
+        }
     </script>
 
 </body>
