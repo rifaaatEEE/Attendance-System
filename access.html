@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+</head>
+<body>
+  <h1>Admin Dashboard</h1>
+  <table id="requestsTable" border="1">
+    <thead>
+      <tr>
+        <th>Email</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Dynamic rows will be inserted here -->
+    </tbody>
+  </table>
+
+  <!-- Include Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+
+  <script>
+    // Initialize Supabase Client
+    const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; // Replace with your Supabase public API key
+  const dbInstance = supabase.createClient(supabaseUrl, supabaseKey);
+
+    console.log("Supabase instance initialized for admin:", dbInstance);
+
+    // Fetch data and populate the table
+    async function fetchRequests() {
+      const { data, error } = await dbInstance
+        .from('teacher_requests')
+        .select('*');
+
+      if (error) {
+        console.error("Error fetching requests:", error);
+        return;
+      }
+
+      const tableBody = document.querySelector('#requestsTable tbody');
+      tableBody.innerHTML = ''; // Clear previous rows
+
+      data.forEach((request) => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${request.email}</td>
+          <td>${request.status}</td>
+          <td>
+            <button onclick="approveRequest(${request.id}, '${request.email}')">Approve</button>
+          </td>
+        `;
+        tableBody.appendChild(row);
+      });
+    }
+
+    // Approve Request
+    async function approveRequest(id, email) {
+      const { error } = await dbInstance
+        .from('teacher_requests')
+        .update({ status: 'approved' })
+        .eq('id', id);
+
+      if (error) {
+        console.error("Error approving request:", error);
+        alert("Error approving request: " + error.message);
+        return;
+      }
+
+      // Send an approval email
+      const teacherDashboardLink = "https://your-site.com/teacher_dashboard.html";
+      sendEmail(email, teacherDashboardLink);
+      alert(`Request for ${email} has been approved!`);
+      fetchRequests(); // Refresh the table
+    }
+
+    // Send Email Function
+    async function sendEmail(email, link) {
+      try {
+        const response = await fetch("http://localhost:3000/send-email", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email,
+            link,
+          }),
+        });
+
+        const result = await response.json();
+        if (result.success) {
+          console.log("Email sent successfully!");
+        } else {
+          console.error("Failed to send email:", result.message);
+          alert("Failed to send email. Please check the logs.");
+        }
+      } catch (err) {
+        console.error("Error sending email:", err);
+        alert("An error occurred while sending the email.");
+      }
+    }
+
+    // Fetch and display requests on page load
+    fetchRequests();
+  </script>
+</body>
+</html>
