@@ -21,19 +21,25 @@
   <div id="error-message" class="error-message"></div>
 
   <script>
-    // Define Supabase instance outside of event listener
-    const dbInstance = (() => {
+    // Initialize Supabase client and check for errors
+    try {
       const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
       const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
-      return supabase.createClient(supabaseUrl, supabaseAnonKey);
-    })();
+
+      const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+      console.log('Supabase client initialized successfully:', supabase);
+    } catch (error) {
+      console.error('Error initializing Supabase:', error);
+      document.getElementById('error-message').innerText = "Failed to initialize Supabase.";
+    }
 
     document.addEventListener("DOMContentLoaded", async () => {
-      const urlParams = new URLSearchParams(window.location.hash.substring(1));
+      const urlParams = new URLSearchParams(window.location.search);
       const accessToken = urlParams.get('access_token');
       const refreshToken = urlParams.get('refresh_token');
+      const type = urlParams.get('type');
 
-      if (!accessToken || !refreshToken) {
+      if (!accessToken || !refreshToken || type !== 'recovery') {
         document.getElementById('error-message').innerText = "Invalid or expired reset link. Please request a new one.";
         return;
       }
@@ -45,7 +51,7 @@
 
         try {
           // Set session using tokens from URL
-          const { error: sessionError } = await dbInstance.auth.setSession({
+          const { error: sessionError } = await supabase.auth.setSession({
             access_token: accessToken,
             refresh_token: refreshToken
           });
@@ -57,7 +63,7 @@
           }
 
           // Update the user's password
-          const { error: passwordError } = await dbInstance.auth.updateUser({
+          const { error: passwordError } = await supabase.auth.updateUser({
             password: newPassword
           });
 
