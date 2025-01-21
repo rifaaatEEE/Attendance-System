@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Upload CT Marks</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.13.0/dist/umd/supabase.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f1f8f6;
+      color: #333;
+      padding: 20px;
+      margin: 0;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      border: 2px solid #0a7747; /* Parrot green border */
+      border-radius: 15px;
+      background-color: #ffffff;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #0a7747; /* Parrot green */
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+
+    label {
+      font-weight: bold;
+      color: #0277b8; /* Parrot blue */
+      margin-bottom: 5px;
+      display: block;
+    }
+
+    select,
+    input,
+    button {
+      padding: 12px;
+      margin: 10px 0;
+      width: 100%;
+      box-sizing: border-box;
+      font-size: 16px;
+      border: 1px solid #0277b8; /* Parrot blue border */
+      border-radius: 5px;
+      background-color: #f1f8f6;
+    }
+
+    select:focus,
+    input:focus,
+    button:focus {
+      border-color: #0a7747; /* Parrot green */
+      outline: none;
+      box-shadow: 0 0 5px rgba(10, 119, 71, 0.5);
+    }
+
+    button {
+      background-color: #0277b8; /* Parrot blue */
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover {
+      background-color: #01579b; /* Darker blue for hover effect */
+    }
+
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+
+    table,
+    th,
+    td {
+      border: 1px solid #ccc;
+    }
+
+    th,
+    td {
+      padding: 12px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #0277b8; /* Parrot blue */
+      color: white;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+
+    .loader {
+      text-align: center;
+      margin: 20px 0;
+      font-size: 18px;
+      color: #0a7747; /* Parrot green */
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 600px) {
+      .container {
+        padding: 15px;
+      }
+
+      select,
+      input,
+      button {
+        padding: 8px;
+        font-size: 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Upload CT Marks</h2>
+    <label for="courseSelect">Select Course:</label>
+    <select id="courseSelect" onchange="loadStudents()">
+      <option value="">--Select a Course--</option>
+    </select>
+    <div class="loader" id="loader" style="display: none;">Loading...</div>
+    <div id="marksForm"></div>
+    <button id="saveMarksButton" onclick="saveMarks()" style="display: none;">Save Marks</button>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
+    const dbInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Load courses into dropdown
+    async function loadCourses() {
+      const { data: courses, error } = await dbInstance
+        .from("teachers")
+        .select("course_code, course_name");
+
+      if (error) {
+        console.error("Error loading courses:", error);
+        return;
+      }
+
+      const courseSelect = document.getElementById("courseSelect");
+      courseSelect.innerHTML = '<option value="">--Select a Course--</option>';
+      courses.forEach((course) => {
+        courseSelect.innerHTML += `<option value="${course.course_code}">${course.course_name}</option>`;
+      });
+    }
+
+    // Load students for the selected course
+   async function loadStudents() {
+  const courseCode = document.getElementById("courseSelect").value;
+  if (!courseCode) return;
+
+  document.getElementById("loader").style.display = "block";
+  document.getElementById("marksForm").innerHTML = "";
+  document.getElementById("saveMarksButton").style.display = "none";
+
+  // Fetch students
+  const { data: students, error: studentsError } = await dbInstance
+    .from("students")
+    .select("roll_number, name");
+
+  if (studentsError) {
+    console.error("Error loading students:", studentsError);
+    document.getElementById("loader").style.display = "none";
+    return;
+  }
+
+  // Fetch existing marks for the selected course
+  const { data: marks, error: marksError } = await dbInstance
+    .from("CT_Marks")
+    .select("roll_number, CT_1, CT_2, CT_3")
+    .eq("course_code", courseCode);
+
+  if (marksError) {
+    console.error("Error loading marks:", marksError);
+    document.getElementById("loader").style.display = "none";
+    return;
+  }
+
+  // Map marks by roll number for quick lookup
+  const marksMap = {};
+  marks.forEach((mark) => {
+    marksMap[mark.roll_number] = {
+      CT_1: mark.CT_1 || 0,
+      CT_2: mark.CT_2 || 0,
+      CT_3: mark.CT_3 || 0,
+    };
+  });
+
+  let formHTML = `
+    <table>
+      <thead>
+        <tr>
+          <th>Roll Number</th>
+          <th>Name</th>
+          <th>CT 1</th>
+          <th>CT 2</th>
+          <th>CT 3</th>
+        </tr>
+      </thead>
+      <tbody>`;
+
+  students.forEach((student) => {
+    const existingMarks = marksMap[student.roll_number] || { CT_1: 0, CT_2: 0, CT_3: 0 };
+
+    formHTML += `
+      <tr>
+        <td>${student.roll_number}</td>
+        <td>${student.name}</td>
+        <td><input type="number" min="0" max="100" id="ct1_${student.roll_number}" value="${existingMarks.CT_1}" /></td>
+        <td><input type="number" min="0" max="100" id="ct2_${student.roll_number}" value="${existingMarks.CT_2}" /></td>
+        <td><input type="number" min="0" max="100" id="ct3_${student.roll_number}" value="${existingMarks.CT_3}" /></td>
+      </tr>`;
+  });
+
+  formHTML += "</tbody></table>";
+  document.getElementById("marksForm").innerHTML = formHTML;
+  document.getElementById("saveMarksButton").style.display = "block";
+  document.getElementById("loader").style.display = "none";
+}
+
+async function saveMarks() {
+  const courseCode = document.getElementById("courseSelect").value;
+  const rows = document.querySelectorAll("#marksForm table tbody tr");
+  const dataToSave = [];
+
+  rows.forEach((row) => {
+    const rollNumber = row.cells[0].innerText.trim();
+    const ct1 = parseInt(document.getElementById(`ct1_${rollNumber}`).value || 0);
+    const ct2 = parseInt(document.getElementById(`ct2_${rollNumber}`).value || 0);
+    const ct3 = parseInt(document.getElementById(`ct3_${rollNumber}`).value || 0);
+
+    dataToSave.push({
+      roll_number: rollNumber,
+      CT_1: ct1,
+      CT_2: ct2,
+      CT_3: ct3,
+      course_code: courseCode,
+    });
+  });
+
+  console.log("Data to save:", dataToSave);
+
+  try {
+    const { data, error } = await dbInstance.from("CT_Marks").upsert(dataToSave, {
+      onConflict: ["roll_number", "course_code"],
+    });
+
+    if (error) throw error;
+
+    alert("Marks saved successfully!");
+  } catch (error) {
+    console.error("Error saving marks:", error);
+    alert(`Failed to save marks: ${error.message}`);
+  } finally {
+    document.getElementById("loader").style.display = "none";
+  }
+}
+
+
+    // Load courses on page load
+    loadCourses();
+  </script>
+</body>
+</html>
