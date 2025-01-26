@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      background: linear-gradient(to bottom, #6bb3f2, #d6eaff);
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+    .container {
+      background: #ffffff;
+      padding: 30px 20px;
+      border-radius: 15px;
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+      max-width: 500px;
+      text-align: center;
+    }
+    h1 {
+      font-size: 24px;
+      color: #007BFF;
+      margin-bottom: 20px;
+    }
+    .btn-container {
+      margin-top: 20px;
+    }
+    .btn {
+      display: block;
+      margin: 10px auto;
+      padding: 12px 20px;
+      font-size: 16px;
+      background-color: #007BFF;
+      color: white;
+      text-decoration: none;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 80%;
+      transition: background-color 0.3s;
+    }
+    .btn:hover {
+      background-color: #0056b3;
+    }
+    .info-message {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #ff0000;
+      background: #fff3cd;
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ffc107;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Internal Assessment Management</h1>
+    <div class="btn-container">
+      <a href="view_attendance.html" class="btn">View Attendance</a>
+      <a href="view_ct_marks.html" class="btn">View CT Marks</a>
+    </div>
+    <div class="info-message">
+      Implementation of RBAC (Role-Based Access Control) & User Authentication is under development. After the next update, particular users will be able to access only permitted data. Stay with us.
+    </div>
+  </div>
+</body>
+</html>
