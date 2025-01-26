@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>View CT Marks</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f1f8f6;
+      padding: 20px;
+      margin: 0;
+    }
+    .container {
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+      text-align: center;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    h1 {
+      color: #007BFF;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      font-size: 16px;
+    }
+    button {
+      padding: 10px 20px;
+      background-color: #007BFF;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background-color: #0056b3;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007BFF;
+      color: white;
+    }
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>View CT Marks</h1>
+    <input type="text" id="rollNumberInput" placeholder="Enter Roll Number">
+    <button onclick="fetchCTMarks()">View CT Marks</button>
+    <table id="ctMarksTable" style="display: none;">
+      <thead>
+        <tr>
+          <th>Course Code</th>
+          <th>CT 1</th>
+          <th>CT 2</th>
+          <th>CT 3</th>
+        </tr>
+      </thead>
+      <tbody id="ctMarksTableBody"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
+    const dbInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function fetchCTMarks() {
+      const rollNumber = document.getElementById('rollNumberInput').value.trim();
+      const tableBody = document.getElementById('ctMarksTableBody');
+      const table = document.getElementById('ctMarksTable');
+
+      if (!rollNumber) {
+        alert('Please enter a valid roll number.');
+        return;
+      }
+
+      try {
+        // Fetch CT Marks for the given roll number
+        const { data, error } = await dbInstance
+          .from('CT_Marks')
+          .select('course_code, CT_1, CT_2, CT_3')
+          .eq('roll_number', rollNumber);
+
+        if (error) {
+          console.error('Error fetching CT Marks:', error);
+          alert('Failed to fetch CT Marks. Please try again later.');
+          return;
+        }
+
+        // Clear existing rows
+        tableBody.innerHTML = '';
+
+        // Populate the table with fetched data
+        if (data.length > 0) {
+          data.forEach((row) => {
+            const tableRow = `
+              <tr>
+                <td>${row.course_code}</td>
+                <td>${row.CT_1 || 0}</td>
+                <td>${row.CT_2 || 0}</td>
+                <td>${row.CT_3 || 0}</td>
+              </tr>
+            `;
+            tableBody.innerHTML += tableRow;
+          });
+          table.style.display = 'table';
+        } else {
+          alert('No CT Marks found for the given roll number.');
+          table.style.display = 'none';
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        alert('Something went wrong. Please try again.');
+      }
+    }
+  </script>
+</body>
+</html>
