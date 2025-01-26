@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate CT Marks Report</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.13.0/dist/umd/supabase.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      text-align: center;
+    }
+    h1 {
+      color: #0277b8;
+      font-size: 24px;
+    }
+    select,
+    button {
+      width: 100%;
+      padding: 12px;
+      margin: 15px 0;
+      font-size: 16px;
+      border: 1px solid #0277b8;
+      border-radius: 5px;
+      background-color: #f1f8f6;
+    }
+    button {
+      background-color: #0277b8;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #01579b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Generate CT Marks Report</h1>
+    <select id="courseSelect">
+      <option value="" disabled selected>--Select a Course--</option>
+    </select>
+    <button onclick="generateReport()">Generate PDF Report</button>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co'; // Replace with your actual Supabase URL
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; // Replace with your actual Supabase Key
+    const dbInstance = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    let courseName = '';
+    let courseCode = '';
+
+    // Fetch available courses
+    async function fetchCourses() {
+      const { data: courses, error } = await dbInstance
+        .from('teachers')
+        .select('course_code, course_name');
+
+      if (error) {
+        console.error('Error fetching courses:', error);
+        alert('Failed to fetch courses.');
+        return;
+      }
+
+      const courseSelect = document.getElementById('courseSelect');
+      courses.forEach(course => {
+        const option = document.createElement('option');
+        option.value = course.course_code;
+        option.text = `${course.course_name} (${course.course_code})`;
+        option.dataset.courseName = course.course_name;
+        courseSelect.appendChild(option);
+      });
+    }
+
+    // Generate the PDF report
+    async function generateReport() {
+      const selectedOption = document.getElementById('courseSelect').selectedOptions[0];
+      if (!selectedOption) {
+        alert('Please select a course!');
+        return;
+      }
+
+      courseName = selectedOption.dataset.courseName;
+      courseCode = selectedOption.value;
+
+      // Fetch CT marks for the selected course
+      const { data: marksData, error } = await dbInstance
+        .from('CT_Marks')
+        .select('roll_number, CT_1, CT_2, CT_3')
+        .eq('course_code', courseCode);
+
+      if (error) {
+        console.error('Error fetching CT marks:', error);
+        alert('Failed to fetch CT marks.');
+        return;
+      }
+
+      // Fetch student details
+      const { data: studentData, error: studentError } = await dbInstance
+        .from('students')
+        .select('roll_number, name');
+
+      if (studentError) {
+        console.error('Error fetching student data:', studentError);
+        alert('Failed to fetch student details.');
+        return;
+      }
+
+      // Map student names to their roll numbers
+      const studentMap = {};
+      studentData.forEach(student => {
+        studentMap[student.roll_number] = student.name;
+      });
+
+      // Create a formatted array for the PDF table
+      const tableData = marksData.map(mark => [
+        mark.roll_number,
+        studentMap[mark.roll_number] || 'Unknown',
+        mark.CT_1 || 0,
+        mark.CT_2 || 0,
+        mark.CT_3 || 0,
+      ]);
+
+      // Generate the PDF
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(18);
+      doc.text(`CT Marks Report`, 14, 20);
+      doc.setFontSize(14);
+      doc.text(`Course: ${courseName}`, 14, 30);
+      doc.text(`Course Code: ${courseCode}`, 14, 40);
+
+      doc.autoTable({
+        head: [['Roll Number', 'Name', 'CT 1', 'CT 2', 'CT 3']],
+        body: tableData,
+        startY: 50,
+        styles: { fontSize: 10, halign: 'center' },
+        headStyles: { fillColor: [2, 119, 184] },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        margin: { top: 50 },
+      });
+
+      doc.save(`CT_Marks_Course_${courseCode}.pdf`);
+    }
+
+    // Load courses on page load
+    fetchCourses();
+  </script>
+</body>
+</html>
