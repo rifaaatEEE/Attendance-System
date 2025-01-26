@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Attendance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f2f6fc;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+        input, select, button {
+            padding: 10px 15px;
+            margin: 10px 0;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 300px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>View Attendance</h1>
+        <input type="text" id="rollNumber" placeholder="Enter Roll Number">
+        <select id="courseDropdown">
+            <option value="" disabled selected>Select a Course</option>
+        </select>
+        <button onclick="fetchAttendanceData()">View Attendance</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody id="attendanceTable"></tbody>
+        </table>
+    </div>
+    <script>
+        const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
+        const dbInstance = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function fetchCourses() {
+            const { data, error } = await dbInstance.from("attendance").select("course_code");
+            if (error) {
+                console.error("Error fetching courses:", error);
+                return;
+            }
+            const uniqueCourses = [...new Set(data.map(a => a.course_code))];
+            const dropdown = document.getElementById("courseDropdown");
+            uniqueCourses.forEach(courseCode => {
+                const option = document.createElement("option");
+                option.value = courseCode;
+                option.textContent = `Course ${courseCode}`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        async function fetchAttendanceData() {
+            const rollNumber = document.getElementById("rollNumber").value;
+            const courseCode = document.getElementById("courseDropdown").value;
+
+            if (!rollNumber || !courseCode) {
+                alert("Please enter a roll number and select a course.");
+                return;
+            }
+
+            // Get student_id from roll_number
+            const { data: studentData, error: studentError } = await dbInstance
+                .from("students")
+                .select("student_id")
+                .eq("roll_number", rollNumber)
+                .single();
+
+            if (studentError || !studentData) {
+                alert("No student found with the provided roll number.");
+                console.error("Student Error:", studentError);
+                return;
+            }
+
+            const studentId = studentData.student_id;
+
+            // Fetch attendance data for the student
+            const { data: attendanceData, error: attendanceError } = await dbInstance
+                .from("attendance")
+                .select("timestamp")
+                .eq("student_id", studentId)
+                .eq("course_code", courseCode);
+
+            if (attendanceError) {
+                console.error("Error fetching attendance data:", attendanceError);
+                return;
+            }
+
+            // Calculate total classes for the course
+            const totalClasses = new Set(
+                (
+                    await dbInstance
+                        .from("attendance")
+                        .select("timestamp")
+                        .eq("course_code", courseCode)
+                ).data.map(record => record.timestamp)
+            ).size;
+
+            const attendanceCount = attendanceData.length;
+            const attendancePercentage = ((attendanceCount / totalClasses) * 100).toFixed(2);
+
+            // Populate table
+            const tableBody = document.getElementById("attendanceTable");
+            tableBody.innerHTML = "";
+
+            attendanceData.forEach(record => {
+                tableBody.innerHTML += `
+                    <tr>
+                        <td>${new Date(record.timestamp).toLocaleDateString()}</td>
+                        <td>Present</td>
+                    </tr>`;
+            });
+
+            tableBody.innerHTML += `
+                <tr>
+                    <td colspan="2" style="text-align: right; font-weight: bold;">
+                        Attendance Percentage: ${attendancePercentage}%
+                    </td>
+                </tr>`;
+        }
+
+        window.onload = fetchCourses;
+    </script>
+</body>
+</html>
