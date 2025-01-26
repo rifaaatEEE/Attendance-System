@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Attendance Marks by Course</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+        select, button {
+            padding: 10px 15px;
+            margin: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px auto;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Attendance Marks by Course</h1>
+        <select id="courseDropdown" onchange="fetchAttendanceData()">
+            <option value="" disabled selected>Select a course</option>
+        </select>
+        <button onclick="downloadPDF()">Download PDF</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Student ID</th>
+                <th>Name</th>
+                <th>Attendance Count</th>
+                <th>Total Classes</th>
+                <th>Attendance Percentage</th>
+                <th>Marks (Out of 8)</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceTable"></tbody>
+    </table>
+    <script>
+        let dbInstance;
+        let selectedCourseCode = "";
+
+        function initializeSupabase() {
+            const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; // Replace with your Supabase public API key
+     
+            dbInstance = supabase.createClient(supabaseUrl, supabaseKey);
+            fetchCourses();
+        }
+
+        async function fetchCourses() {
+            const { data, error } = await dbInstance.from("attendance").select("course_code");
+            if (!error) {
+                const uniqueCourses = [...new Set(data.map(item => item.course_code))];
+                const dropdown = document.getElementById("courseDropdown");
+                uniqueCourses.forEach(course_code => {
+                    const option = document.createElement("option");
+                    option.value = course_code;
+                    option.text = `Course ${course_code}`;
+                    dropdown.appendChild(option);
+                });
+            }
+        }
+
+        async function fetchAttendanceData() {
+            selectedCourseCode = document.getElementById("courseDropdown").value;
+            const { data, error } = await dbInstance
+                .from("attendance")
+                .select("*")
+                .eq("course_code", selectedCourseCode);
+
+            if (!error) {
+                calculateAttendance(data);
+            }
+        }
+
+        function calculateAttendance(attendanceData) {
+            const totalClasses = new Set(attendanceData.map(row => row.timestamp)).size;
+            const studentAttendance = {};
+
+            attendanceData.forEach(({ student_id, student_name }) => {
+                if (!studentAttendance[student_id]) {
+                    studentAttendance[student_id] = { count: 0, name: student_name };
+                }
+                studentAttendance[student_id].count++;
+            });
+
+            const tbody = document.getElementById("attendanceTable");
+            tbody.innerHTML = "";
+            for (const [student_id, { count, name }] of Object.entries(studentAttendance)) {
+                const attendancePercentage = (count / totalClasses) * 100;
+                let marks = 0;
+                if (attendancePercentage >= 95) marks = 8;
+                else if (attendancePercentage >= 90) marks = 7;
+                else if (attendancePercentage >= 85) marks = 6;
+                else if (attendancePercentage >= 80) marks = 5;
+                else if (attendancePercentage >= 75) marks = 4;
+                else if (attendancePercentage >= 70) marks = 3;
+                else if (attendancePercentage >= 65) marks = 2;
+                else if (attendancePercentage >= 60) marks = 1;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${student_id}</td>
+                        <td>${name}</td>
+                        <td>${count}</td>
+                        <td>${totalClasses}</td>
+                        <td>${attendancePercentage.toFixed(2)}%</td>
+                        <td>${marks}</td>
+                    </tr>`;
+            }
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const courseText = `Attendance Marks Report - Course ${selectedCourseCode}`;
+            doc.setFont("helvetica", "bold");
+            doc.setFontSize(18);
+            doc.text(courseText, 14, 20);
+
+            doc.autoTable({
+                html: "table",
+                startY: 30,
+                styles: { fontSize: 10, halign: "center" },
+                headStyles: { fillColor: [0, 123, 255] },
+                bodyStyles: { fillColor: [245, 245, 245] },
+                alternateRowStyles: { fillColor: [255, 255, 255] },
+                margin: { top: 30 },
+            });
+
+            doc.save(`Attendance_Marks_Course_${selectedCourseCode}.pdf`);
+        }
+
+        window.onload = initializeSupabase;
+    </script>
+</body>
+</html>
