@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Internal Assessment Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f9f9f9;
+            color: #333;
+        }
+        .container {
+            width: 80%;
+            margin: 20px auto;
+            text-align: center;
+            padding: 20px;
+            background: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            margin-bottom: 20px;
+            color: #007BFF;
+        }
+        select, button {
+            padding: 10px 15px;
+            margin: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 20px auto;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+        }
+        th {
+            background-color: #007BFF;
+            color: white;
+        }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Internal Assessment Report</h1>
+        <select id="courseDropdown" onchange="generateReport()">
+            <option value="" disabled selected>Select a course</option>
+        </select>
+        <button onclick="downloadPDF()">Download PDF Report</button>
+    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Student Name</th>
+                <th>Roll Number</th>
+                <th>CT 1</th>
+                <th>CT 2</th>
+                <th>CT 3</th>
+                <th>Average of Best 2 CTs</th>
+                <th>Attendance Mark</th>
+                <th>Total Mark of Internal Assessment</th>
+            </tr>
+        </thead>
+        <tbody id="reportTable"></tbody>
+    </table>
+    <script>
+        const SUPABASE_URL = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
+        const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        async function fetchCourses() {
+            const { data, error } = await db.from('teachers').select('course_code');
+            if (error) {
+                console.error('Error fetching courses:', error);
+                return;
+            }
+            const dropdown = document.getElementById('courseDropdown');
+            data.forEach(course => {
+                const option = document.createElement('option');
+                option.value = course.course_code;
+                option.text = `Course ${course.course_code}`;
+                dropdown.appendChild(option);
+            });
+        }
+
+        async function generateReport() {
+            const courseCode = document.getElementById('courseDropdown').value;
+            if (!courseCode) return;
+
+            const { data: attendanceData, error: attendanceError } = await db
+                .from('attendance')
+                .select('student_id, timestamp')
+                .eq('course_code', courseCode);
+
+            const { data: ctData, error: ctError } = await db
+                .from('CT_Marks')
+                .select('roll_number, CT_1, CT_2, CT_3')
+                .eq('course_code', courseCode);
+
+            const { data: studentData, error: studentError } = await db
+                .from('students')
+                .select('student_id, name, roll_number');
+
+            if (attendanceError || ctError || studentError) {
+                console.error('Error fetching data:', attendanceError || ctError || studentError);
+                return;
+            }
+
+            const totalClasses = new Set(attendanceData.map(row => row.timestamp)).size;
+            const attendanceCountMap = attendanceData.reduce((acc, row) => {
+                acc[row.student_id] = (acc[row.student_id] || 0) + 1;
+                return acc;
+            }, {});
+
+            const tbody = document.getElementById('reportTable');
+            tbody.innerHTML = '';
+
+            studentData.forEach(student => {
+                const attendanceCount = attendanceCountMap[student.student_id] || 0;
+                const attendancePercentage = (attendanceCount / totalClasses) * 100;
+                const attendanceMark = calculateAttendanceMark(attendancePercentage);
+
+                const ctMarks = ctData.find(ct => ct.roll_number === student.roll_number) || {
+                    CT_1: 0,
+                    CT_2: 0,
+                    CT_3: 0,
+                };
+
+                const best2Average = calculateBest2Average([ctMarks.CT_1, ctMarks.CT_2, ctMarks.CT_3]);
+                const totalMark = attendanceMark + best2Average;
+
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${student.name}</td>
+                        <td>${student.roll_number}</td>
+                        <td>${ctMarks.CT_1}</td>
+                        <td>${ctMarks.CT_2}</td>
+                        <td>${ctMarks.CT_3}</td>
+                        <td>${best2Average.toFixed(2)}</td>
+                        <td>${attendanceMark}</td>
+                        <td>${totalMark.toFixed(2)}</td>
+                    </tr>
+                `;
+            });
+        }
+
+        function calculateAttendanceMark(percentage) {
+            if (percentage >= 95) return 8;
+            if (percentage >= 90) return 7;
+            if (percentage >= 85) return 6;
+            if (percentage >= 80) return 5;
+            if (percentage >= 75) return 4;
+            if (percentage >= 70) return 3;
+            if (percentage >= 65) return 2;
+            if (percentage >= 60) return 1;
+            return 0;
+        }
+
+        function calculateBest2Average(marks) {
+            marks.sort((a, b) => b - a);
+            return (marks[0] + marks[1]) / 2;
+        }
+
+        function downloadPDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            const courseText = `Internal Assessment Report`;
+            doc.text(courseText, 14, 20);
+
+            doc.autoTable({
+                html: 'table',
+                startY: 30,
+                styles: { fontSize: 10 },
+                headStyles: { fillColor: [0, 123, 255] },
+            });
+
+            doc.save('Internal_Assessment_Report.pdf');
+        }
+
+        window.onload = fetchCourses;
+    </script>
+</body>
+</html>
