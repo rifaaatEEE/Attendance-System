@@ -54,12 +54,23 @@
     </div>
 
     <script>
-        // Initialize Supabase
-        const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; 
-        const supabase = supabase.createClient(supabaseUrl, supabaseKey);
+        // Ensure Supabase is initialized BEFORE any use
+        const initializeSupabase = () => {
+            const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
+            return supabase.createClient(supabaseUrl, supabaseKey);
+        };
 
-        document.addEventListener("DOMContentLoaded", async function() {
+        // Create the Supabase client
+        const dbInstance = initializeSupabase();
+
+        document.addEventListener("DOMContentLoaded", async function () {
+            // Ensure dbInstance is ready
+            if (!dbInstance) {
+                document.getElementById('reset-message').textContent = "Error initializing database. Please try again.";
+                return;
+            }
+
             // Extract access token from URL
             const urlParams = new URLSearchParams(window.location.hash.substring(1));
             const accessToken = urlParams.get('access_token');
@@ -74,7 +85,7 @@
                 e.preventDefault();
                 const newPassword = document.getElementById('reset-password').value;
 
-                const { data, error } = await supabase.auth.updateUser({ password: newPassword });
+                const { data, error } = await dbInstance.auth.updateUser({ password: newPassword });
 
                 if (error) {
                     document.getElementById('reset-message').textContent = "Error: " + error.message;
