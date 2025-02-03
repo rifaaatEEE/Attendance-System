@@ -43,7 +43,6 @@
     </style>
 </head>
 <body>
-
     <div class="form-container">
         <h2>Reset Your Password</h2>
         <div id="reset-message" class="error"></div>
@@ -54,48 +53,52 @@
     </div>
 
     <script>
-        // Ensure Supabase is initialized BEFORE any use
-        const initializeSupabase = () => {
-            const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
-            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
-            return supabase.createClient(supabaseUrl, supabaseKey);
-        };
-
-        // Create the Supabase client
-        const dbInstance = initializeSupabase();
+        // Initialize Supabase client after script load
+        let dbInstance;
 
         document.addEventListener("DOMContentLoaded", async function () {
-            // Ensure dbInstance is ready
-            if (!dbInstance) {
-                document.getElementById('reset-message').textContent = "Error initializing database. Please try again.";
-                return;
-            }
+            try {
+                // 1. Initialize Supabase client
+                dbInstance = supabase.createClient(
+                    'https://vwhxnfnvtsvycwgmcmwh.supabase.co',
+                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'
+                );
 
-            // Extract access token from URL
-            const urlParams = new URLSearchParams(window.location.hash.substring(1));
-            const accessToken = urlParams.get('access_token');
+                // 2. Check for access token
+                const urlParams = new URLSearchParams(window.location.hash.substring(1));
+                const accessToken = urlParams.get('access_token');
 
-            if (!accessToken) {
-                document.getElementById('reset-message').textContent = "Invalid or expired password reset link.";
-                return;
-            }
-
-            // Handle password reset form submission
-            document.getElementById('reset-form').addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const newPassword = document.getElementById('reset-password').value;
-
-                const { data, error } = await dbInstance.auth.updateUser({ password: newPassword });
-
-                if (error) {
-                    document.getElementById('reset-message').textContent = "Error: " + error.message;
-                } else {
-                    alert("Password reset successful! Please log in.");
-                    window.location.href = "login.html";
+                if (!accessToken) {
+                    document.getElementById('reset-message').textContent = "Invalid or expired password reset link.";
+                    return;
                 }
-            });
+
+                // 3. Set up form handler
+                document.getElementById('reset-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const newPassword = document.getElementById('reset-password').value.trim();
+
+                    try {
+                        const { data, error } = await dbInstance.auth.updateUser({
+                            password: newPassword
+                        });
+
+                        if (error) throw error;
+                        
+                        alert("Password reset successful! Redirecting to login...");
+                        window.location.href = "login.html";
+                    } catch (err) {
+                        document.getElementById('reset-message').textContent = 
+                            `Error: ${err.message || 'Password reset failed'}`;
+                    }
+                });
+
+            } catch (error) {
+                document.getElementById('reset-message').textContent = 
+                    "Failed to initialize application. Please refresh the page.";
+                console.error("Initialization error:", error);
+            }
         });
     </script>
-
 </body>
 </html>
