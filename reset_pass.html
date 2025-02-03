@@ -6,40 +6,12 @@
     <title>Reset Password</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 400px;
-            margin: 50px auto;
-            text-align: center;
-        }
-        .form-container {
-            padding: 20px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
-        }
-        input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            box-sizing: border-box;
-        }
-        button {
-            background: #28a745;
-            color: white;
-            padding: 10px;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            width: 100%;
-        }
-        button:hover {
-            background: #218838;
-        }
-        .error {
-            color: red;
-            margin-bottom: 10px;
-        }
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; text-align: center; }
+        .form-container { padding: 20px; border: 1px solid #ddd; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); }
+        input { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        button { background: #28a745; color: white; padding: 10px; border: none; border-radius: 4px; cursor: pointer; width: 100%; }
+        button:hover { background: #218838; }
+        .error { color: red; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -54,48 +26,30 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", async function () {
-            let dbInstance = supabase.createClient(
+            const dbInstance = supabase.createClient(
                 'https://vwhxnfnvtsvycwgmcmwh.supabase.co',
                 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'
             );
 
-            // Extract access_token and refresh_token from URL
+            // Extract access token from URL
             const urlParams = new URLSearchParams(window.location.search);
             const accessToken = urlParams.get('access_token');
-            let refreshToken = urlParams.get('refresh_token'); 
 
             if (!accessToken) {
                 document.getElementById('reset-message').textContent = "Invalid or expired password reset link.";
                 return;
             }
 
-            // Handle missing refresh_token (Supabase might still allow session setup)
-            if (!refreshToken) {
-                console.warn("Warning: refresh_token is missing. Trying to set session with access_token only.");
-                refreshToken = ""; // Allow empty refresh_token
-            }
-
-            // Attempt to set session with available tokens
-            const { error: sessionError } = await dbInstance.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken
-            });
-
-            if (sessionError) {
-                document.getElementById('reset-message').textContent = "Failed to authenticate session.";
-                console.error("Session Error:", sessionError);
-                return;
-            }
-
-            // Handle password reset submission
+            // Handle password reset without session setting
             document.getElementById('reset-form').addEventListener('submit', async (e) => {
                 e.preventDefault();
                 const newPassword = document.getElementById('reset-password').value.trim();
 
                 try {
-                    const { data, error } = await dbInstance.auth.updateUser({
-                        password: newPassword
-                    });
+                    const { data, error } = await dbInstance.auth.updateUser(
+                        { password: newPassword },
+                        { headers: { Authorization: `Bearer ${accessToken}` } } // Use access token directly
+                    );
 
                     if (error) throw error;
 
