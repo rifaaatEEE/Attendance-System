@@ -53,59 +53,51 @@
     </div>
 
     <script>
-        let dbInstance;
+        document.addEventListener("DOMContentLoaded", async function () {
+            let dbInstance = supabase.createClient(
+                'https://vwhxnfnvtsvycwgmcmwh.supabase.co',
+                'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'
+            );
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            try {
-                // 1. Initialize Supabase client
-                dbInstance = supabase.createClient(
-                    'https://vwhxnfnvtsvycwgmcmwh.supabase.co',
-                    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'
-                );
+            // Extract access token and refresh token from query parameters
+            const urlParams = new URLSearchParams(window.location.search);
+            const accessToken = urlParams.get('access_token');
+            const refreshToken = urlParams.get('refresh_token');
 
-                // 2. Extract tokens from both query params and hash
-                const queryParams = new URLSearchParams(window.location.search);
-                const hashParams = new URLSearchParams(window.location.hash.substring(1));
-
-                const accessToken = queryParams.get('access_token') || hashParams.get('access_token');
-                const refreshToken = queryParams.get('refresh_token') || hashParams.get('refresh_token');
-
-                console.log('Tokens:', { accessToken, refreshToken }); // Debugging
-
-                if (!accessToken || !refreshToken) {
-                    throw new Error("Invalid or expired password reset link.");
-                }
-
-                // 3. Set Supabase session
-                const { error: sessionError } = await dbInstance.auth.setSession({
-                    access_token: accessToken,
-                    refresh_token: refreshToken
-                });
-
-                if (sessionError) throw sessionError;
-
-                // 4. Handle form submission
-                document.getElementById('reset-form').addEventListener('submit', async (e) => {
-                    e.preventDefault();
-                    const password = document.getElementById('reset-password').value.trim();
-
-                    try {
-                        const { error } = await dbInstance.auth.updateUser({ password });
-                        if (error) throw error;
-
-                        alert("Password updated successfully! Redirecting to login...");
-                        window.location.href = "login.html";
-                    } catch (err) {
-                        document.getElementById('reset-message').textContent = 
-                            `Error: ${err.message}`;
-                    }
-                });
-
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('reset-message').textContent = 
-                    "Invalid or expired password reset link. Please request a new one.";
+            if (!accessToken || !refreshToken) {
+                document.getElementById('reset-message').textContent = "Invalid or expired password reset link.";
+                return;
             }
+
+            // Set session with access and refresh tokens
+            const { error: sessionError } = await dbInstance.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken
+            });
+
+            if (sessionError) {
+                document.getElementById('reset-message').textContent = "Failed to authenticate session.";
+                return;
+            }
+
+            // Handle password reset submission
+            document.getElementById('reset-form').addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const newPassword = document.getElementById('reset-password').value.trim();
+
+                try {
+                    const { data, error } = await dbInstance.auth.updateUser({
+                        password: newPassword
+                    });
+
+                    if (error) throw error;
+
+                    alert("Password reset successful! Redirecting to login...");
+                    window.location.href = "login.html";
+                } catch (err) {
+                    document.getElementById('reset-message').textContent = `Error: ${err.message || 'Password reset failed'}`;
+                }
+            });
         });
     </script>
 </body>
