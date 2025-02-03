@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Reset Password</title>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; text-align: center; }
         .form-container { padding: 20px; border: 1px solid #ddd; border-radius: 5px; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); }
@@ -28,26 +28,21 @@
         document.addEventListener("DOMContentLoaded", async function () {
             const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
             const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; 
-
             const dbInstance = supabase.createClient(supabaseUrl, supabaseKey);
 
-            // Extract tokens from URL
+            // Extract access_token from URL
             const urlParams = new URLSearchParams(window.location.search);
             const accessToken = urlParams.get('access_token');
-            const refreshToken = urlParams.get('refresh_token');
 
-            if (!accessToken || !refreshToken) {
+            if (!accessToken) {
                 document.getElementById('reset-message').textContent = "❌ Invalid or expired password reset link.";
                 return;
             }
 
-            console.log("Tokens found. Setting session...");
+            console.log("Token found. Setting session...");
 
-            // Set the session before updating the password
-            const { error } = await dbInstance.auth.setSession({
-                access_token: accessToken,
-                refresh_token: refreshToken
-            });
+            // Set session only with access_token (no refresh_token needed)
+            const { error } = await dbInstance.auth.setSession({ access_token });
 
             if (error) {
                 console.error("Session Error:", error);
