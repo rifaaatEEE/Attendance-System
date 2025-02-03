@@ -26,11 +26,10 @@
 
     <script>
         document.addEventListener("DOMContentLoaded", async function () {
-            // Initialize Supabase
+            // ✅ Initialize Supabase (Corrected Variable Name)
             const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; // Replace with your Supabase public API key
-      
-            const dbInstance = supabase.createClient(supabaseUrl, supabaseAnonKey);
+            const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; 
+            const dbInstance = supabase.createClient(supabaseUrl, supabaseKey); // ✅ Fixed Variable Name
 
             // Extract tokens from URL
             const urlParams = new URLSearchParams(window.location.search);
