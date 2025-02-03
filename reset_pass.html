@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Reset Password</title>
+  <!-- Include Supabase client library -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <style>
     body { font-family: Arial, sans-serif; max-width: 400px; margin: 50px auto; text-align: center; }
@@ -26,16 +27,16 @@
 
   <script>
     document.addEventListener("DOMContentLoaded", async function () {
-      // Initialize Supabase
-      const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co'; // your Supabase URL
-      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; // your public API key
+      // Initialize Supabase – replace these with your actual values.
+      const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
+      const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4';
       const supabase = supabase.createClient(supabaseUrl, supabaseKey);
 
-      // Function to get URL parameters from either the search or the hash
+      // Function to extract tokens from both query string and hash fragment
       function getTokens() {
         let params = new URLSearchParams(window.location.search);
         if (!params.get("access_token")) {
-          // If no query parameter found, check hash fragment (remove the leading '#' character)
+          // If not found in query, try hash fragment (remove the leading '#' character)
           params = new URLSearchParams(window.location.hash.substring(1));
         }
         return {
@@ -46,6 +47,7 @@
 
       const { accessToken, refreshToken } = getTokens();
 
+      // Check if tokens are present
       if (!accessToken || !refreshToken) {
         document.getElementById('reset-message').textContent = "❌ Invalid or expired password reset link.";
         return;
@@ -53,7 +55,7 @@
 
       console.log("Tokens found. Setting session...");
 
-      // Set the session with both tokens
+      // Set the session using the extracted tokens
       const { error } = await supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
@@ -67,7 +69,7 @@
 
       console.log("Session set successfully!");
 
-      // Handle form submission for password reset
+      // Listen for form submission to update password
       document.getElementById('reset-form').addEventListener('submit', async (e) => {
         e.preventDefault();
         const newPassword = document.getElementById('reset-password').value.trim();
@@ -76,7 +78,8 @@
           const { error } = await supabase.auth.updateUser({ password: newPassword });
           if (error) throw error;
           alert("✅ Password reset successful! Redirecting to login...");
-          window.location.href = "login.html"; // adjust this to your actual login page
+          // Redirect to your login page (adjust the URL as needed)
+          window.location.href = "login.html";
         } catch (err) {
           document.getElementById('reset-message').textContent = `❌ Error: ${err.message || 'Password reset failed'}`;
           console.error("Password Reset Error:", err);
