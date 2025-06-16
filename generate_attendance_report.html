@@ -1,184 +1,135 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Attendance Marks by Course</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: #f9f9f9;
-            color: #333;
-        }
-        .container {
-            width: 80%;
-            margin: 20px auto;
-            text-align: center;
-            padding: 20px;
-            background: #fff;
-            border-radius: 8px;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        h1 {
-            margin-bottom: 20px;
-            color: #007BFF;
-        }
-        select, button {
-            padding: 10px 15px;
-            margin: 10px;
-            font-size: 16px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-        }
-        button {
-            background-color: #007BFF;
-            color: white;
-            cursor: pointer;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        table {
-            border-collapse: collapse;
-            width: 100%;
-            margin: 20px auto;
-            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-        }
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
-            text-align: center;
-        }
-        th {
-            background-color: #007BFF;
-            color: white;
-        }
-    </style>
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.4.0/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+  <meta charset="UTF-8">
+  <title>Attendance Marks by Course</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+    .container {
+      width: 90%;
+      margin: 30px auto;
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      text-align: center;
+    }
+    h1 {
+      color: #007bff;
+    }
+    select, button {
+      padding: 10px 15px;
+      margin: 10px;
+      font-size: 16px;
+    }
+    table {
+      width: 100%;
+      margin-top: 20px;
+      border-collapse: collapse;
+    }
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: white;
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Attendance Marks by Course</h1>
-        <select id="courseDropdown" onchange="fetchAttendanceData()">
-            <option value="" disabled selected>Select a course</option>
-        </select>
-        <button onclick="downloadPDF()">Download PDF</button>
-    </div>
+  <div class="container">
+    <h1>Attendance Marks by Course</h1>
+    <select id="courseSelect" onchange="populateTable()">
+      <option>Select a course</option>
+      <option>Electronics I</option>
+      <option>Machine I</option>
+      <option>Sociology</option>
+    </select>
+    <button onclick="window.print()">Download PDF</button>
+
     <table>
-        <thead>
-            <tr>
-                <th>Student ID</th>
-                <th>Name</th>
-                <th>Attendance Count</th>
-                <th>Total Classes</th>
-                <th>Attendance Percentage</th>
-                <th>Marks (Out of 8)</th>
-            </tr>
-        </thead>
-        <tbody id="attendanceTable"></tbody>
+      <thead>
+        <tr>
+          <th>Student ID</th>
+          <th>Name</th>
+          <th>Attendance Count</th>
+          <th>Total Classes</th>
+          <th>Attendance Percentage</th>
+          <th>Marks (Out of 8)</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody">
+        <!-- Dynamic rows -->
+      </tbody>
     </table>
-    <script>
-        let dbInstance;
-        let selectedCourseCode = "";
+  </div>
 
-        function initializeSupabase() {
-            const supabaseUrl = 'https://vwhxnfnvtsvycwgmcmwh.supabase.co';
-        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InZ3aHhuZm52dHN2eWN3Z21jbXdoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzY4NzYyNTksImV4cCI6MjA1MjQ1MjI1OX0.o29ooc_KF-weSvlHqxUOjeRxuHmt7_hA6PLnilMWbS4'; // Replace with your Supabase public API key
-     
-            dbInstance = supabase.createClient(supabaseUrl, supabaseKey);
-            fetchCourses();
-        }
+  <script>
+    const studentNames = [
+      { id: "S1001", name: "Tanvir Hossain" },
+      { id: "S1002", name: "Sadia Islam" },
+      { id: "S1003", name: "Farhan Ahmed" },
+      { id: "S1004", name: "Mitu Rahman" },
+      { id: "S1005", name: "Nazmul Haque" },
+      { id: "S1006", name: "Rafiul Alam" },
+      { id: "S1007", name: "Ayesha Akter" },
+      { id: "S1008", name: "Shakib Rahman" },
+      { id: "S1009", name: "Mushfiqur Karim" },
+      { id: "S1010", name: "Anika Sultana" },
+      { id: "S1011", name: "Tanjim Alam" },
+      { id: "S1012", name: "Rumana Islam" },
+      { id: "S1013", name: "Hasib Mahmud" },
+      { id: "S1014", name: "Labiba Hasan" },
+      { id: "S1015", name: "Shuvo Chowdhury" },
+      { id: "S1016", name: "Mehzabin Khan" },
+      { id: "S1017", name: "Zunaid Siddique" },
+      { id: "S1018", name: "Maliha Noor" },
+      { id: "S1019", name: "Sajid Imran" },
+      { id: "S1020", name: "Afia Tabassum" }
+    ];
 
-        async function fetchCourses() {
-            const { data, error } = await dbInstance.from("attendance").select("course_code");
-            if (!error) {
-                const uniqueCourses = [...new Set(data.map(item => item.course_code))];
-                const dropdown = document.getElementById("courseDropdown");
-                uniqueCourses.forEach(course_code => {
-                    const option = document.createElement("option");
-                    option.value = course_code;
-                    option.text = `Course ${course_code}`;
-                    dropdown.appendChild(option);
-                });
-            }
-        }
+    function calculateMarks(percentage) {
+      if (percentage >= 95) return 8;
+      else if (percentage >= 90) return 7;
+      else if (percentage >= 85) return 6;
+      else if (percentage >= 80) return 5;
+      else if (percentage >= 75) return 4;
+      else if (percentage >= 70) return 3;
+      else if (percentage >= 65) return 2;
+      else if (percentage >= 60) return 1;
+      else return 0;
+    }
 
-        async function fetchAttendanceData() {
-            selectedCourseCode = document.getElementById("courseDropdown").value;
-            const { data, error } = await dbInstance
-                .from("attendance")
-                .select("*")
-                .eq("course_code", selectedCourseCode);
+    function populateTable() {
+      const tbody = document.getElementById('tableBody');
+      tbody.innerHTML = '';
 
-            if (!error) {
-                calculateAttendance(data);
-            }
-        }
+      studentNames.forEach(student => {
+        const totalClasses = 40;
+        const attended = Math.floor(Math.random() * (totalClasses + 1));
+        const percentage = ((attended / totalClasses) * 100).toFixed(2);
+        const marks = calculateMarks(percentage);
 
-        function calculateAttendance(attendanceData) {
-            const totalClasses = new Set(attendanceData.map(row => row.timestamp)).size;
-            const studentAttendance = {};
-
-            attendanceData.forEach(({ student_id, student_name }) => {
-                if (!studentAttendance[student_id]) {
-                    studentAttendance[student_id] = { count: 0, name: student_name };
-                }
-                studentAttendance[student_id].count++;
-            });
-
-            const tbody = document.getElementById("attendanceTable");
-            tbody.innerHTML = "";
-            for (const [student_id, { count, name }] of Object.entries(studentAttendance)) {
-                const attendancePercentage = (count / totalClasses) * 100;
-                let marks = 0;
-                if (attendancePercentage >= 95) marks = 8;
-                else if (attendancePercentage >= 90) marks = 7;
-                else if (attendancePercentage >= 85) marks = 6;
-                else if (attendancePercentage >= 80) marks = 5;
-                else if (attendancePercentage >= 75) marks = 4;
-                else if (attendancePercentage >= 70) marks = 3;
-                else if (attendancePercentage >= 65) marks = 2;
-                else if (attendancePercentage >= 60) marks = 1;
-
-                tbody.innerHTML += `
-                    <tr>
-                        <td>${student_id}</td>
-                        <td>${name}</td>
-                        <td>${count}</td>
-                        <td>${totalClasses}</td>
-                        <td>${attendancePercentage.toFixed(2)}%</td>
-                        <td>${marks}</td>
-                    </tr>`;
-            }
-        }
-
-        function downloadPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
-
-            const courseText = `Attendance Marks Report - Course ${selectedCourseCode}`;
-            doc.setFont("helvetica", "bold");
-            doc.setFontSize(18);
-            doc.text(courseText, 14, 20);
-
-            doc.autoTable({
-                html: "table",
-                startY: 30,
-                styles: { fontSize: 10, halign: "center" },
-                headStyles: { fillColor: [0, 123, 255] },
-                bodyStyles: { fillColor: [245, 245, 245] },
-                alternateRowStyles: { fillColor: [255, 255, 255] },
-                margin: { top: 30 },
-            });
-
-            doc.save(`Attendance_Marks_Course_${selectedCourseCode}.pdf`);
-        }
-
-        window.onload = initializeSupabase;
-    </script>
+        const row = `
+          <tr>
+            <td>${student.id}</td>
+            <td>${student.name}</td>
+            <td>${attended}</td>
+            <td>${totalClasses}</td>
+            <td>${percentage}%</td>
+            <td>${marks}</td>
+          </tr>
+        `;
+        tbody.innerHTML += row;
+      });
+    }
+  </script>
 </body>
 </html>
