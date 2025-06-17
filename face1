@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>New Registration</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f0f4f8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .container {
+      background: #ffffff;
+      padding: 30px 40px;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+      width: 320px;
+      text-align: center;
+    }
+
+    .header {
+      background-color: #a0e7e5;
+      padding: 12px;
+      border-radius: 12px;
+      font-size: 20px;
+      font-weight: bold;
+      color: #004d40;
+      margin-bottom: 25px;
+    }
+
+    .input-group {
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    input[type="text"] {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      font-size: 14px;
+      background-color: #f9f9f9;
+    }
+
+    .clear-button {
+      margin-left: 8px;
+      padding: 8px 12px;
+      background-color: #ff6b6b;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+
+    .info-text {
+      font-size: 13px;
+      color: #555;
+      margin: 20px 0;
+    }
+
+    .action-button {
+      background-color: #4dabf7;
+      color: white;
+      border: none;
+      padding: 12px;
+      border-radius: 10px;
+      font-size: 16px;
+      width: 100%;
+      margin: 10px 0;
+      cursor: pointer;
+      transition: background-color 0.3s ease;
+    }
+
+    .action-button:hover {
+      background-color: #339af0;
+    }
+
+    .footer {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #333;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <div class="header">For New Registrations</div>
+
+    <div class="input-group">
+      <input type="text" placeholder="Enter ID">
+      <button class="clear-button">Clear</button>
+    </div>
+
+    <div class="input-group">
+      <input type="text" placeholder="Enter Name">
+      <button class="clear-button">Clear</button>
+    </div>
+
+    <div class="info-text">1) Take Images &nbsp;&nbsp;&nbsp; 2) Save Profile</div>
+
+    <button class="action-button">Take Images</button>
+    <button class="action-button">Save Profile</button>
+
+    <div class="footer">Total Registrations till now : 1</div>
+  </div>
+
+</body>
+</html>
